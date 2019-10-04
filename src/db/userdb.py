@@ -1,12 +1,19 @@
 import logging
-import sqlite3
 import os
+import sqlite3
+
+db_file_path = ''
 
 
-db_file_path = os.getcwd() + '\\db\\user-database.db'
+def set_db(path=None):
+    global db_file_path
+    if path:
+        db_file_path = path
+        logging.info(f'DB module initialization. dbFile path is: {db_file_path}')
+    else:
+        db_file_path = os.getcwd() + '\\db\\user-database.db'
+        logging.info(f'DB module initialization with default dbFile path: {db_file_path}')
 
-def set_db(path):
-    db_file_path = path
 
 def create_connection():
     if not os.path.exists(db_file_path):
@@ -16,68 +23,66 @@ def create_connection():
     return conn
 
 
-def create_user_tables():
-    conn = create_connection()
-    c = conn.cursor()
+def transaction(input_func):
+    def decorator(conn=None, **kwargs):
+        if not conn:
+            conn = create_connection()
+        c = conn.cursor()
+        output = input_func(c, **kwargs)
+        conn.commit()
+        conn.close()
+        return output
+    return decorator
+
+
+@transaction
+def create_user_tables(c=None):
     c.execute('''CREATE TABLE IF NOT EXISTS user
                  (name text PRIMARY KEY, password text NOT NULL, role text NOT NULL, cwd text )''')
-    c.execute('''INSERT OR IGNORE INTO user 
-                 VALUES ('admin','qwerty','ADMIN', 'C://')''')
     c.execute('''CREATE TABLE IF NOT EXISTS chat
                  (id INTEGER PRIMARY KEY, user text NOT NULL)''')
-    conn.commit()
-    conn.close()
 
 
-def is_authenticated(chat_id):
-    conn = create_connection()
-    c = conn.cursor()
-    c.execute('select * from chat WHERE id=?', (chat_id,))
+@transaction
+def add_user(c=None,  **kwargs):
+    c.execute('''INSERT OR IGNORE INTO user 
+                     VALUES (:user, :password, 'ADMIN', 'C://')''', kwargs)
+
+
+@transaction
+def is_authenticated(c=None,  **kwargs):
+    c.execute('select * from chat WHERE id=:chat_id', kwargs)
     row = c.fetchone()
-    conn.close()
     if row:
-        logging.info(f'chat:{chat_id} is registered')
-        # Chat(row['id'], row['first_name'], row['user'])
+        logging.info(f'chat:{kwargs["chat_id"]} is registered')
         return row['user']
     else:
-        logging.info(f'chat:{chat_id} not found')
+        logging.info(f'chat:{kwargs["chat_id"]} not found')
         return False
 
 
-def get_working_directory(user):
-    conn = create_connection()
-    c = conn.cursor()
-    c.execute('select * from user WHERE name=?', (user,))
+@transaction
+def get_working_directory(c=None,  **kwargs):
+    c.execute('select * from user WHERE name=:user', kwargs)
     row = c.fetchone()
-    conn.commit()
-    conn.close()
     return row['cwd']
 
 
-def update_working_directory(user, dir):
-    conn = create_connection()
-    c = conn.cursor()
-    c.execute('UPDATE user  SET cwd=? WHERE name=?', (dir, user,))
-    conn.commit()
-    conn.close()
+@transaction
+def update_working_directory(c=None,  **kwargs):
+    c.execute('UPDATE user  SET cwd=:dir WHERE name=:user', kwargs)
 
 
-def bind_chat_to_user(chat_id, user):
-    conn = create_connection()
-    c = conn.cursor()
+@transaction
+def bind_chat_to_user(c=None,  **kwargs):
     c.execute('''INSERT OR IGNORE INTO chat 
-                   VALUES (?,?)''', (chat_id, user))
-    conn.commit()
-    conn.close()
+                VALUES (:chat_id,:user)''', kwargs)
 
 
-def is_user_exists(user_name, user_pass):
-    conn = create_connection()
-    c = conn.cursor()
-    c.execute('select * from user WHERE name=? and password = ?', (user_name, user_pass))
+@transaction
+def is_user_exists(c=None,  **kwargs):
+    c.execute('select * from user WHERE name=:user_name and password = :user_pass', kwargs)
     row = c.fetchone()
-
-    conn.close()
     if row:
         return True
     else:
