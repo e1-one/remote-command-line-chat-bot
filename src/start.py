@@ -9,23 +9,19 @@ def read_config_file():
         return json.load(f)
 
 
-def start():
-    config = read_config_file()
+def configure_db(config_file):
+    from src.db.userdb import set_db, create_user_tables, add_user
 
-    from src.db.userdb import set_db, create_user_tables
-
-    config_db_file = config['sqlite_db_path'];
-    if config_db_file:
-        logging.info(f'DB module initialization. dbFile path is: {config_db_file}')
-        set_db(config_db_file)
-    else:
-        logging.info(f'DB module initialization with default dbFile path')
+    set_db(config_file['sqlite_db_path'])
     create_user_tables()
+    add_user(user=config_file['username'], password=config_file['password'])
 
+
+def configure_and_start_telegram_dispatcher(config_file):
     from telegram.ext import CommandHandler, Updater
     from src.callbacks import run, cd, login, start, error_callback
 
-    updater = Updater(token=config['token'], use_context=True)
+    updater = Updater(token=config_file['token'], use_context=True)
     dispatcher = updater.dispatcher
     dispatcher.add_handler(CommandHandler('run', run))
     dispatcher.add_handler(CommandHandler('cd', cd))
@@ -36,5 +32,12 @@ def start():
     updater.start_polling()
 
 
+def start_app():
+    config = read_config_file()
+
+    configure_db(config)
+    configure_and_start_telegram_dispatcher(config)
+
+
 if __name__ == '__main__':
-    start()
+    start_app()

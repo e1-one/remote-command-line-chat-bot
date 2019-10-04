@@ -1,4 +1,5 @@
 from telegram import ParseMode
+
 from src.db.userdb import *
 from src.oscommand import execute_command, check_dir
 
@@ -16,10 +17,11 @@ What I can do:
 
 def check_auth(input_func):
     def callback_decorator(update, context):
-        if is_authenticated(update.message.chat_id):
+        if is_authenticated(chat_id=update.message.chat_id):
             input_func(update, context)
         else:
             context.bot.send_message(chat_id=update.message.chat_id, text='You are not authenticated.')
+
     return callback_decorator
 
 
@@ -27,7 +29,7 @@ def check_auth(input_func):
 def cd(update, context):
     dir = context.args[0]
     if check_dir(dir):
-        update_working_directory('admin', dir)  # todo: hardcoded
+        update_working_directory(user='admin', dir=dir)  # todo: hardcoded
         context.bot.send_message(chat_id=update.message.chat_id, text='Current dir changed')
     else:
         context.bot.send_message(chat_id=update.message.chat_id, text='Invalid directory')
@@ -42,8 +44,8 @@ def run(update, context):
 
 
 def login(update, context):
-    if is_user_exists(context.args[0], context.args[1]):
-        bind_chat_to_user(update.message.chat_id, context.args[0])
+    if is_user_exists(user_name=context.args[0], user_pass=context.args[1]):
+        bind_chat_to_user(chat_id=update.message.chat_id, user=context.args[0])
         context.bot.send_message(chat_id=update.message.chat_id, text='Authenticated. Access granted.')
     else:
         context.bot.send_message(chat_id=update.message.chat_id, text='Invalid username/password')
