@@ -1,6 +1,6 @@
 from telegram import ParseMode
 
-from src.db.userdb import *
+from src.db import *
 from src.oscommand import execute_command, check_dir
 
 

@@ -10,7 +10,7 @@ def read_config_file():
 
 
 def configure_db(config_file):
-    from src.db.userdb import set_db, create_user_tables, add_user
+    from src.db import set_db, create_user_tables, add_user
 
     set_db(config_file['sqlite_db_path'])
     create_user_tables()
