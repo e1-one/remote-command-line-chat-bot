@@ -1,4 +1,6 @@
 {
   "token": "PutYourTokenHere",
-  "sqlite_db_path": "EnterPathHere"
+  "sqlite_db_path": "Path to your file.db",
+  "username": "admin",
+  "password": "pass"
 }
