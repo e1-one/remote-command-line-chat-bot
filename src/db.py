@@ -28,7 +28,9 @@ def transaction(input_func):
         if not conn:
             conn = create_connection()
         c = conn.cursor()
+
         output = input_func(c, **kwargs)
+
         conn.commit()
         conn.close()
         return output
@@ -38,7 +40,7 @@ def transaction(input_func):
 @transaction
 def create_user_tables(c=None):
     c.execute('''CREATE TABLE IF NOT EXISTS user
-                 (name text PRIMARY KEY, password text NOT NULL, role text NOT NULL, cwd text )''')
+                 (name text PRIMARY KEY, password text NOT NULL)''')
     c.execute('''CREATE TABLE IF NOT EXISTS chat
                  (id INTEGER PRIMARY KEY, user text NOT NULL)''')
 
@@ -46,7 +48,7 @@ def create_user_tables(c=None):
 @transaction
 def add_user(c=None,  **kwargs):
     c.execute('''INSERT OR IGNORE INTO user 
-                     VALUES (:user, :password, 'ADMIN', 'C://')''', kwargs)
+                     VALUES (:user, :password)''', kwargs)
 
 
 @transaction
@@ -57,26 +59,14 @@ def is_authenticated(c=None,  **kwargs):
         logging.info(f'chat:{kwargs["chat_id"]} is registered')
         return row['user']
     else:
-        logging.info(f'chat:{kwargs["chat_id"]} not found')
+        logging.info(f'chat:{kwargs["chat_id"]} is not found')
         return False
-
-
-@transaction
-def get_working_directory(c=None,  **kwargs):
-    c.execute('select * from user WHERE name=:user', kwargs)
-    row = c.fetchone()
-    return row['cwd']
-
-
-@transaction
-def update_working_directory(c=None,  **kwargs):
-    c.execute('UPDATE user  SET cwd=:dir WHERE name=:user', kwargs)
 
 
 @transaction
 def bind_chat_to_user(c=None,  **kwargs):
     c.execute('''INSERT OR IGNORE INTO chat 
-                VALUES (:chat_id,:user)''', kwargs)
+                VALUES (:chat_id, :user)''', kwargs)
 
 
 @transaction
