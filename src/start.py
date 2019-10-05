@@ -18,15 +18,15 @@ def configure_db(config_file):
 
 
 def configure_and_start_telegram_dispatcher(config_file):
-    from telegram.ext import CommandHandler, Updater
-    from src.callbacks import run, cd, login, start, error_callback
+    from telegram.ext import CommandHandler, Updater, MessageHandler, Filters
+    from src.callbacks import run, login, start, text_message, error_callback
 
     updater = Updater(token=config_file['token'], use_context=True)
     dispatcher = updater.dispatcher
     dispatcher.add_handler(CommandHandler('run', run))
-    dispatcher.add_handler(CommandHandler('cd', cd))
     dispatcher.add_handler(CommandHandler('login', login))
     dispatcher.add_handler(CommandHandler('start', start))
+    dispatcher.add_handler(MessageHandler(Filters.text, text_message))
     dispatcher.add_error_handler(error_callback)
     logging.info('Starting updates polling')
     updater.start_polling()

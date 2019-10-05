@@ -1,16 +1,16 @@
 from telegram import ParseMode
 
 from src.db import *
-from src.oscommand import execute_command, check_dir
+from src.oscommand import execute_command_as_subprocess, check_dir
 
 
 def start(update, context):
     index_message = '''
 I'm a remote command executor bot, please talk to me!
 What I can do:
+Type command with parameters to the chat. For example, type: *echo hello* `program _echo_ with parameter _hello_ will be executed on the server, output will be returned to this chat`
 /login *username* *password* `authenticates you`
-/run *command* (params) `runs the command and returns output`
-/cd *dir* `changes current working directory`
+/start `shows this message`
 '''
     context.bot.send_message(chat_id=update.message.chat_id, parse_mode=ParseMode.MARKDOWN, text=index_message)
 
@@ -26,18 +26,23 @@ def check_auth(input_func):
 
 
 @check_auth
-def cd(update, context):
-    dir = context.args[0]
-    if check_dir(dir):
-        update_working_directory(user='admin', dir=dir)  # todo: hardcoded
-        context.bot.send_message(chat_id=update.message.chat_id, text='Current dir changed')
-    else:
-        context.bot.send_message(chat_id=update.message.chat_id, text='Invalid directory')
+def run(update, context):
+    args = context.args
+    if args[0] is 'cd':
+        if check_dir(dir):
+            update_working_directory(user='admin', dir=dir)  # todo: hardcoded
+            context.bot.send_message(chat_id=update.message.chat_id, text='Current dir changed')
+        else:
+            context.bot.send_message(chat_id=update.message.chat_id, text='Invalid directory')
+    raw_output = execute_command_as_subprocess(args)
+    output = raw_output.replace('\\r\\n', '\n')
+    if output:
+        context.bot.send_message(chat_id=update.message.chat_id, text=output)
 
 
 @check_auth
-def run(update, context):
-    raw_output = execute_command(context.args)
+def text_message(update, context):
+    raw_output = execute_command_as_subprocess(update.message.text.split(' '))
     output = raw_output.replace('\\r\\n', '\n')
     if output:
         context.bot.send_message(chat_id=update.message.chat_id, text=output)

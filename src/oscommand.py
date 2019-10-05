@@ -3,7 +3,7 @@ import os
 import subprocess
 
 
-def execute_command(command):
+def execute_command_as_subprocess(command):
     if os.sys.platform == 'win32':
         return execute_on_windows(command)
     else:
