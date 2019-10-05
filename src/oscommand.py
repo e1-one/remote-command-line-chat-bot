@@ -10,7 +10,7 @@ def execute_command_as_subprocess(command):
         raise Exception(f'Unsupported platform: {os.sys.platform}')
 
 
-def check_dir(new_dir):
+def change_working_dir(new_dir):
     try:
         os.chdir(new_dir)
         return True

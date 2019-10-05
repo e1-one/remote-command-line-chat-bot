@@ -1,7 +1,7 @@
 from telegram import ParseMode
 
 from src.db import *
-from src.oscommand import execute_command_as_subprocess, check_dir
+from src.oscommand import execute_command_as_subprocess, change_working_dir
 
 
 def start(update, context):
@@ -25,24 +25,17 @@ def check_auth(input_func):
     return callback_decorator
 
 
-@check_auth
-def run(update, context):
-    args = context.args
-    if args[0] is 'cd':
-        if check_dir(dir):
-            update_working_directory(user='admin', dir=dir)  # todo: hardcoded
-            context.bot.send_message(chat_id=update.message.chat_id, text='Current dir changed')
-        else:
-            context.bot.send_message(chat_id=update.message.chat_id, text='Invalid directory')
-    raw_output = execute_command_as_subprocess(args)
-    output = raw_output.replace('\\r\\n', '\n')
-    if output:
-        context.bot.send_message(chat_id=update.message.chat_id, text=output)
-
 
 @check_auth
 def text_message(update, context):
-    raw_output = execute_command_as_subprocess(update.message.text.split(' '))
+    args_without_falsy = [x for x in update.message.text.split(' ') if x]
+    if args_without_falsy[0] == 'cd':
+        if change_working_dir(args_without_falsy[1]):
+            # update_working_directory(user='admin', dir=dir)  # todo: hardcoded
+            context.bot.send_message(chat_id=update.message.chat_id, text='Current dir changed')
+        else:
+            context.bot.send_message(chat_id=update.message.chat_id, text='Invalid directory')
+    raw_output = execute_command_as_subprocess(args_without_falsy)
     output = raw_output.replace('\\r\\n', '\n')
     if output:
         context.bot.send_message(chat_id=update.message.chat_id, text=output)
