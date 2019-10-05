@@ -1,6 +1,6 @@
 {
-  "token": "PutYourTokenHere",
-  "sqlite_db_path": "Path to your file.db",
+  "token": "874184028:AAGlRJ2oofex8Sis1mKUFbBtrQh4ToZJ5zk",
+  "sqlite_db_path": "D:\\develop\\PyCharmProjects\\my-telegram-bot\\user-DATABASE.db",
   "username": "admin",
-  "password": "pass"
+  "password": "qwerty"
 }
